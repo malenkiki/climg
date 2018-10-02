@@ -3,11 +3,12 @@
 # TODO commentaire pour dire ce que ça fait
 # TODO faire une aide
 
+
 THUMB_WIDTH=400
 THUMB_HEIGHT=400
 FULL_SIZE=400x400
 
-HELP_MSG="Create PNG thumbnail for given PDF file using its first page.\n
+HELP_MSG="Create PNG thumbnail for given DOC, ODT, PDF etc. file using its first page.\n
 \n
     -s <WxH>    Thumbnail width and height as 'widthxheight'\n
     -i <FILE>   Input file\n
@@ -20,18 +21,25 @@ do
     case "${option}"
     in
         s) FULL_SIZE=${OPTARG};;
-        i) INPUT_FILE=${OPTARG};;
+        i) ORIGINAL_FILE=${OPTARG};INPUT_FILE=${OPTARG}; PROV_FILE=${OPTARG};;
         h) echo -e $HELP_MSG && exit 0;;
     esac
 done
 
+function convertFirstPageInPDF()
+{
+    # Get basename without extension
+    PROV_FILE=$(basename -- "$PROV_FILE");
+    EXT="${PROV_FILE##*.}"
+    PROV_FILE="/tmp/${PROV_FILE%.*}.pdf"
+    unoconv -f pdf -e PageRange=1-1 -o "${PROV_FILE}" "$INPUT_FILE" 
+    INPUT_FILE="$PROV_FILE";
+    #echo $INPUT_FILE;
+    #exit 1;
+}
 
-if [ -z "$INPUT_FILE" ];
-then
-    echo "No file given! Run '$0 -h' to have some help!";
-    exit 1;
-else
-
+function createThumbnailFromPDF()
+{
     PDF_SIZE=$(identify -format "%[fx:w]x%[fx:h]" "${INPUT_FILE}"[0])
     PDF_WIDTH=$(echo $PDF_SIZE | cut -f1 -dx)
     PDF_HEIGHT=$(echo $PDF_SIZE | cut -f2 -dx)
@@ -39,8 +47,6 @@ else
     #FULL_SIZE="${THUMB_WIDTH}x${THUMB_HEIGHT}"
     OUTPUT_FILE=`basename "${INPUT_FILE}" .pdf`.png
 
-    #    -o "${TMP_FILE}" \
-    # TODO expliquer le fonctionnement
     gs \
         -q \
         -sDEVICE=jpeg \
@@ -60,7 +66,30 @@ else
         -extent ${FULL_SIZE} \
         +profile "*" \
         "${OUTPUT_FILE}" 
-    
-    exit 0;
+}
 
+function removeTemporaryFile()
+{
+    if [ "$ORIGINAL_FILE" != "$INPUT_FILE" ];
+    then
+        rm "$INPUT_FILE";
+    fi
+}
+
+
+if [ -z "$INPUT_FILE" ];
+then
+    echo "No file given! Run '$0 -h' to have some help!";
+    exit 1;
+else
+    # If it is not a PDF, do convert it to temp PDF using unoconv
+    if [ `file --mime-type "$INPUT_FILE" | grep pdf | wc -l` -eq 0 ];
+    then
+        convertFirstPageInPDF
+    fi
+
+    createThumbnailFromPDF;
+    removeTemporaryFile;
+
+    exit 0;
 fi
