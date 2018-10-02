@@ -1,0 +1,151 @@
+#!/bin/bash
+
+# Crée différentes images pour les icones apparaissant sur les
+# téléphones Android, téléphones iPhone et MSApplication.
+
+HELP_MSG="Create PNG icons for Android, iPhone and Windows App and their HTML tags.\n
+\n
+    -p <URL>    URL prefix to append. Ex: '/img/'. Default is '/'\n
+    -i <FILE>   Input file\n
+\n
+    -h          This help message\n\n
+"
+PREFIX="/"
+
+STD_ICONS=( 16 32 96 )
+ANDROID_ICONS=( 128 192 )
+APPLE_ICONS=( 120 152 167 180 )
+MS_ICONS=( 144 )
+OUTPUT_DIR="output_"$(date +'%s%N')
+HTML_FILE="${OUTPUT_DIR}/head.html"
+
+while getopts p:i:h option
+do
+    case "${option}"
+    in
+        p) PREFIX=${OPTARG};;
+        i) INPUT_FILE=${OPTARG};;
+        h) echo -e $HELP_MSG && exit 0;;
+    esac
+done
+
+
+if [ -z "$INPUT_FILE" ];
+then
+    echo "No file given! Run '$0 -h' to have some help!";
+    exit 1;
+fi
+
+WIDTH=$(identify -ping -format "%w" $INPUT_FILE)
+HEIGHT=$(identify -ping -format "%h" $INPUT_FILE)
+
+#TODO <link rel="shortcut icon" href="/favicon.ico">
+
+if [ $WIDTH -lt 200 ] || [ $HEIGHT -lt 200 ]
+    then
+    echo "Error: Image width or height too small, must be at least at 200px.";
+    exit 1;
+fi
+
+if [ $HEIGHT -ne $WIDTH ]
+    then
+    echo "Error: Image must be a square.";
+    exit 1;
+fi
+
+
+
+# $1: size $2: prefix $3: basename $4: rel
+function html_link()
+{
+    local FULL_SIZE="$1x$1";
+    echo -e "<link rel=\"$4\" href=\"${PREFIX}${3}-${FULL_SIZE}.png\" sizes=\"${FULL_SIZE}\">" >> $HTML_FILE
+}
+
+
+function html_simple_favicon_link()
+{
+    echo -e "<link rel=\"shortcut icon\" href=\"/favicon.ico\">" >> $HTML_FILE
+}
+
+function html_simple_apple_link()
+{
+    echo -e "<link rel=\"apple-touch-icon\" href=\"/apple-touch-icon.png\">" >> $HTML_FILE
+}
+
+function html_ms_meta()
+{
+    local FULL_SIZE="$1x$1";
+    echo -e "<meta name=\"msapplication-TileImage\" content=\"${PREFIX}ms-icon-${FULL_SIZE}.png\">" >> $HTML_FILE
+}
+
+function create_html()
+{
+    echo '' > $HTML_FILE
+    html_simple_favicon_link
+
+    for item in "${STD_ICONS[@]}"
+    do
+        html_link $item $PREFIX 'favicon' 'icon' 
+    done
+
+    for item in "${ANDROID_ICONS[@]}"
+    do
+        html_link $item $PREFIX 'android-icon' 'icon'
+    done
+
+    html_simple_apple_link
+
+    for item in "${APPLE_ICONS[@]}"
+    do
+        html_link $item $PREFIX 'apple-touch-icon' 'apple-touch-icon'        
+    done
+    
+    html_ms_meta ${MS_ICONS[0]}
+}
+
+function create_image()
+{
+    convert "${INPUT_FILE}" -scale "${FULL_SIZE}" "${OUTPUT_DIR}/${NAME}-${FULL_SIZE}.png"
+}
+
+function create_icons()
+{
+    convert "${INPUT_FILE}" -scale 32x32 "${OUTPUT_DIR}/favicon.ico"
+    convert "${INPUT_FILE}" -scale 144x144 "${OUTPUT_DIR}/ms-icon-144x144.png"
+    
+    for item in "${STD_ICONS[@]}"
+    do
+        local FULL_SIZE="${item}x${item}";
+        local NAME='favicon'
+        create_image
+    done
+
+    for item in "${ANDROID_ICONS[@]}"
+    do
+        local FULL_SIZE="${item}x${item}";
+        local NAME='android-icon'
+        create_image
+    done
+    
+    for item in "${APPLE_ICONS[@]}"
+    do
+        local FULL_SIZE="${item}x${item}";
+        local NAME='apple-touch-icon'
+        create_image
+    done
+    
+    cp $(ls "${OUTPUT_DIR}"/apple-touch* | head -n1) "${OUTPUT_DIR}/apple-touch-icon.png"
+}
+
+
+mkdir "${OUTPUT_DIR}"
+create_icons
+create_html
+
+echo -e "\nDone! Results are in ${OUTPUT_DIR} directory."
+exit 0;
+
+
+
+

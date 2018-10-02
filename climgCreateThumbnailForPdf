@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# TODO commentaire pour dire ce que ça fait
+# TODO faire une aide
+
+THUMB_WIDTH=400
+THUMB_HEIGHT=400
+FULL_SIZE=400x400
+
+HELP_MSG="Create PNG thumbnail for given PDF file using its first page.\n
+\n
+    -s <WxH>    Thumbnail width and height as 'widthxheight'\n
+    -i <FILE>   Input file\n
+\n
+    -h          This help message\n\n
+"
+
+while getopts s:i:h option
+do
+    case "${option}"
+    in
+        s) FULL_SIZE=${OPTARG};;
+        i) INPUT_FILE=${OPTARG};;
+        h) echo -e $HELP_MSG && exit 0;;
+    esac
+done
+
+
+if [ -z "$INPUT_FILE" ];
+then
+    echo "No file given! Run '$0 -h' to have some help!";
+    exit 1;
+else
+
+    PDF_SIZE=$(identify -format "%[fx:w]x%[fx:h]" "${INPUT_FILE}"[0])
+    PDF_WIDTH=$(echo $PDF_SIZE | cut -f1 -dx)
+    PDF_HEIGHT=$(echo $PDF_SIZE | cut -f2 -dx)
+
+    #FULL_SIZE="${THUMB_WIDTH}x${THUMB_HEIGHT}"
+    OUTPUT_FILE=`basename "${INPUT_FILE}" .pdf`.png
+
+    #    -o "${TMP_FILE}" \
+    # TODO expliquer le fonctionnement
+    gs \
+        -q \
+        -sDEVICE=jpeg \
+        -dPDFFitPage=true \
+        -dLastPage=1 \
+        -dDEVICEWIDTHPOINTS=${PDF_WIDTH} \
+        -dDEVICEHEIGHTPOINTS=${PDF_HEIGHT} \
+        -r150 \
+        -o %stdout \
+	    "${INPUT_FILE}" 2> /dev/null \
+    | \
+    convert \
+        -background none \
+        -gravity center \
+        jpeg:- \
+        -resize ${FULL_SIZE} \
+        -extent ${FULL_SIZE} \
+        +profile "*" \
+        "${OUTPUT_FILE}" 
+    
+    exit 0;
+
+fi
