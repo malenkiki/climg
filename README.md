@@ -11,15 +11,15 @@ Create PNG icons for Android, iPhone and Windows App and their HTML tags.
  -h This help message to have some help!
 ```
 
-## climgCreateThumbnailForPdf
+## climgCreateThumbnailForDoc
 
 ```txt
-Create PNG thumbnail for given PDF file using its first page.
+Create PNG thumbnail for given DOC, ODT, PDF etc. file using its first page.
  
  -s <WxH> Thumbnail width and height as 'widthxheight'
  -i <FILE> Input file
  
- -h This help message to have some help!
+ -h This help message
 ```
 
 
