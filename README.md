@@ -1,4 +1,4 @@
-# Some usefull bash scrupts about images
+# Some usefull bash scripts about images
 
 ## climgCreateIcons
 
@@ -14,7 +14,7 @@ Create PNG icons for Android, iPhone and Windows App and their HTML tags.
 ## climgCreateThumbnailForPdf
 
 ```txt
-Run Create PNG thumbnail for given PDF file using its first page.
+Create PNG thumbnail for given PDF file using its first page.
  
  -s <WxH> Thumbnail width and height as 'widthxheight'
  -i <FILE> Input file
