@@ -11,6 +11,8 @@ Create PNG icons for Android, iPhone and Windows App and their HTML tags.
  -h This help message to have some help!
 ```
 
+Dependencies: `convert` from Imagemagick softwares set.
+
 ## climgCreateThumbnailForDoc
 
 ```txt
@@ -22,4 +24,4 @@ Create PNG thumbnail for given DOC, ODT, PDF etc. file using its first page.
  -h This help message
 ```
 
-
+Dependencies: `gs`, `convert`, `unoconv` and `LibreOffice`, but last two are only for other formats than PDF. If you want create thumbnail from PDF, only Ghostscript and Imagemagick are required.
